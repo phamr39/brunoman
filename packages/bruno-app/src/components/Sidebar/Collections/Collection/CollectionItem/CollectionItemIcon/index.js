@@ -1,5 +1,6 @@
 import RequestMethod from "../RequestMethod";
-import { IconLoader2, IconAlertTriangle, IconAlertCircle } from '@tabler/icons';
+import { IconLoader2, IconAlertTriangle, IconAlertCircle, IconFolder } from '@tabler/icons';
+import { isItemAFolder } from 'utils/tabs';
 import StyledWrapper from "./StyledWrapper";
 
 const CollectionItemIcon = ({ item }) => {
@@ -13,6 +14,11 @@ const CollectionItemIcon = ({ item }) => {
 
   if (item?.partial) {
     return <StyledWrapper><IconAlertTriangle size={18} className="w-fit mr-2 partial" strokeWidth={1.5} /></StyledWrapper>;
+  }
+
+  // Show folder icon for folders
+  if (isItemAFolder(item)) {
+    return <IconFolder size={16} strokeWidth={1.5} className="w-fit mr-2" />;
   }
 
   return <RequestMethod item={item} />;

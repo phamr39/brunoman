@@ -5,7 +5,7 @@ import { requestUrlChanged, updateRequestMethod } from 'providers/ReduxStore/sli
 import { saveRequest } from 'providers/ReduxStore/slices/collections/actions';
 import HttpMethodSelector from './HttpMethodSelector';
 import { useTheme } from 'providers/Theme';
-import { IconDeviceFloppy, IconArrowRight, IconCode } from '@tabler/icons';
+import { IconDeviceFloppy, IconCode } from '@tabler/icons';
 import SingleLineEditor from 'components/SingleLineEditor';
 import { isMacOS } from 'utils/common/platform';
 import { hasRequestChanges } from 'utils/collections';
@@ -149,7 +149,14 @@ const QueryUrl = ({ item, collection, handleRun }) => {
               Save <span className="shortcut">({saveShortcut})</span>
             </span>
           </div>
-          <IconArrowRight color={theme.requestTabPanel.url.icon} strokeWidth={1.5} size={22} data-testid="send-arrow-icon" />
+          <div
+            className="px-3 py-1 rounded hover:opacity-90 text-xs font-medium select-none"
+            title="Send Request"
+            data-testid="send-arrow-icon"
+            style={{ backgroundColor: theme.colors.text.yellow, color: '#1f1f1f' }}
+          >
+            Send
+          </div>
         </div>
       </div>
       {generateCodeItemModalOpen && (

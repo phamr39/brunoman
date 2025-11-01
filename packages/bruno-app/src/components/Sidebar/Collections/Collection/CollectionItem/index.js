@@ -18,6 +18,7 @@ import CloneCollectionItem from './CloneCollectionItem';
 import DeleteCollectionItem from './DeleteCollectionItem';
 import RunCollectionItem from './RunCollectionItem';
 import GenerateCodeItem from './GenerateCodeItem';
+import ExportFolder from './ExportFolder';
 import { isItemARequest, isItemAFolder } from 'utils/tabs';
 import { doesRequestMatchSearchText, doesFolderHaveItemsMatchSearchText } from 'utils/collections/search';
 import { getDefaultRequestPaneTab } from 'utils/collections';
@@ -59,6 +60,7 @@ const CollectionItem = ({ item, collectionUid, collectionPathname, searchText })
   const [newFolderModalOpen, setNewFolderModalOpen] = useState(false);
   const [runCollectionModalOpen, setRunCollectionModalOpen] = useState(false);
   const [itemInfoModalOpen, setItemInfoModalOpen] = useState(false);
+  const [showExportFolderModal, setShowExportFolderModal] = useState(false);
   const [examplesExpanded, setExamplesExpanded] = useState(false);
   const hasSearchText = searchText && searchText?.trim()?.length;
   const itemIsCollapsed = hasSearchText ? false : item.collapsed;
@@ -413,6 +415,9 @@ const CollectionItem = ({ item, collectionUid, collectionPathname, searchText })
       {itemInfoModalOpen && (
         <CollectionItemInfo item={item} onClose={() => setItemInfoModalOpen(false)} />
       )}
+      {showExportFolderModal && isFolder && (
+        <ExportFolder folder={item} parentCollection={collection} onClose={() => setShowExportFolderModal(false)} />
+      )}
       <CreateExampleModal
         isOpen={createExampleModalOpen}
         onClose={() => setCreateExampleModalOpen(false)}
@@ -500,6 +505,15 @@ const CollectionItem = ({ item, collectionUid, collectionPathname, searchText })
                     }}
                   >
                     New Folder
+                  </div>
+                  <div
+                    className="dropdown-item"
+                    onClick={() => {
+                      dropdownTippyRef.current.hide();
+                      setShowExportFolderModal(true);
+                    }}
+                  >
+                    Export
                   </div>
                   <div
                     className="dropdown-item"

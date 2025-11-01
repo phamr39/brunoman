@@ -67,7 +67,7 @@ const Welcome = () => {
       <div aria-hidden className="">
         <Bruno width={50} />
       </div>
-      <div className="text-xl font-semibold select-none">bruno</div>
+      <div className="text-xl font-semibold select-none">Brunoman</div>
       <div className="mt-4">{t('WELCOME.ABOUT_BRUNO')}</div>
 
       <div className="uppercase font-semibold heading mt-10">{t('COMMON.COLLECTIONS')}</div>

@@ -8,7 +8,7 @@
         "TWITTER": "Twitter"
     },
     "WELCOME": {
-        "ABOUT_BRUNO": "Opensource IDE for exploring and testing APIs",
+        "ABOUT_BRUNO": "Opensource IDE for exploring and testing APIs with Postman Compatiblity",
         "LINKS": "Links",
         "CREATE_COLLECTION": "Create Collection",
         "OPEN_COLLECTION": "Open Collection",

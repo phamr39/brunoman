@@ -1,7 +1,31 @@
 <br />
-<img src="assets/images/logo-transparent.png" width="80"/>
+<img src="assets/images/brunoman-logo.png" width="80"/>
 
-### Bruno - Opensource IDE for exploring and testing APIs.
+### Brunoman – A modern open-source fork of Bruno, built to bridge the gap between Bruno’s local-first design and Postman’s full compatibility.
+
+## What’s New in Brunoman
+
+The Brunoman distribution adds the following enhancements on top of upstream Bruno:
+
+- Clearer sidebar visuals
+  - Collection rows use a collection icon, while folders use a folder icon for quick distinction.
+
+- Export improvements (Collections and Folders)
+  - Collection: Export Bruno Collection, Postman Collection, Postman Collection + Environment(s), or Environment(s) only.
+  - Folder: a dedicated Export dialog with the same options. Folder → Postman export includes parent collection environments.
+  - Postman Environment exporter creates `.postman_environment.json` files that import directly into Postman.
+
+- Postman export parity
+  - Includes collection variables and scripts (pre-request/tests) at collection, folder, and request levels.
+  - Skips gRPC and WebSocket requests in Postman export (not supported by Postman collections).
+
+- Send button UX
+  - Replaced the arrow icon with a labeled “Send” button and aligned the color with Bruno’s yellow accent.
+
+- Branding updates
+  - Title set to “Brunoman” in the renderer and menus. About dialog and Welcome screen use the new logo. Dev icon updated; packaged installer icons can be customized via `.ico/.icns`.
+
+## What’s Bruno?
 
 [![GitHub version](https://badge.fury.io/gh/usebruno%2Fbruno.svg)](https://badge.fury.io/gh/usebruno%bruno)
 [![CI](https://github.com/usebruno/bruno/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/usebruno/bruno/actions/workflows/tests.yml)
@@ -11,6 +35,7 @@
 [![Download](https://img.shields.io/badge/Download-Latest-brightgreen)](https://www.usebruno.com/downloads)
 
 **English**
+| [Tiếng Việt](docs/readme/readme_vi.md)
 | [Українська](docs/readme/readme_ua.md)
 | [Русский](docs/readme/readme_ru.md)
 | [Türkçe](docs/readme/readme_tr.md)

@@ -4,7 +4,7 @@ import classnames from 'classnames';
 import { uuid } from 'utils/common';
 import filter from 'lodash/filter';
 import { useDrop, useDrag } from 'react-dnd';
-import { IconChevronRight, IconDots, IconLoader2 } from '@tabler/icons';
+import { IconChevronRight, IconDots, IconLoader2, IconFolders } from '@tabler/icons';
 import Dropdown from 'components/Dropdown';
 import { toggleCollection, collapseFullCollection } from 'providers/ReduxStore/slices/collections';
 import { mountCollection, moveCollectionAndPersist, handleCollectionItemDrop, pasteItem } from 'providers/ReduxStore/slices/collections/actions';
@@ -26,6 +26,7 @@ import CloneCollection from './CloneCollection';
 import { areItemsLoading } from 'utils/collections';
 import { scrollToTheActiveTab } from 'utils/tabs';
 import ShareCollection from 'components/ShareCollection/index';
+import ExportCollection from './ExportCollection';
 import { CollectionItemDragPreview } from './CollectionItem/CollectionItemDragPreview/index';
 import { sortByNameThenSequence } from 'utils/common/index';
 
@@ -35,6 +36,7 @@ const Collection = ({ collection, searchText }) => {
   const [showRenameCollectionModal, setShowRenameCollectionModal] = useState(false);
   const [showCloneCollectionModalOpen, setShowCloneCollectionModalOpen] = useState(false);
   const [showShareCollectionModal, setShowShareCollectionModal] = useState(false);
+  const [showExportCollectionModal, setShowExportCollectionModal] = useState(false);
   const [showRemoveCollectionModal, setShowRemoveCollectionModal] = useState(false);
   const [dropType, setDropType] = useState(null);
   const dispatch = useDispatch();
@@ -239,6 +241,9 @@ const Collection = ({ collection, searchText }) => {
       {showShareCollectionModal && (
         <ShareCollection collectionUid={collection.uid} onClose={() => setShowShareCollectionModal(false)} />
       )}
+      {showExportCollectionModal && (
+        <ExportCollection collection={collection} onClose={() => setShowExportCollectionModal(false)} />
+      )}
       {showCloneCollectionModalOpen && (
         <CloneCollection collectionUid={collection.uid} onClose={() => setShowCloneCollectionModalOpen(false)} />
       )}
@@ -263,7 +268,8 @@ const Collection = ({ collection, searchText }) => {
             onClick={handleCollectionCollapse}
             onDoubleClick={handleCollectionDoubleClick}
           />
-          <div className="ml-1 w-full" id="sidebar-collection-name" title={collection.name}>
+          <div className="ml-1 w-full flex items-center" id="sidebar-collection-name" title={collection.name}>
+            <IconFolders size={16} strokeWidth={1.5} className="mr-1" />
             {collection.name}
           </div>
           {isLoading ? <IconLoader2 className="animate-spin mx-1" size={18} strokeWidth={1.5} /> : null}
@@ -324,6 +330,16 @@ const Collection = ({ collection, searchText }) => {
               }}
             >
               Rename
+            </div>
+            <div
+              className="dropdown-item"
+              onClick={(_e) => {
+                menuDropdownTippyRef.current.hide();
+                ensureCollectionIsMounted();
+                setShowExportCollectionModal(true);
+              }}
+            >
+              Export
             </div>
             <div
               className="dropdown-item"

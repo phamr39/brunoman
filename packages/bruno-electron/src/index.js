@@ -110,7 +110,7 @@ app.on('ready', async () => {
       preload: path.join(__dirname, 'preload.js'),
       webviewTag: true
     },
-    title: 'Bruno',
+    title: 'Brunoman',
     icon: path.join(__dirname, 'about/256x256.png')
     // we will bring this back
     // see https://github.com/usebruno/bruno/issues/440
@@ -251,4 +251,4 @@ app.on('browser-window-focus', () => {
 // Disable global shortcuts when not focused
 app.on('browser-window-blur', () => {
   globalShortcut.unregisterAll()
-})
+});

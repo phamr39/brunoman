@@ -11,7 +11,6 @@ import {
   IconCheck,
   IconRefresh,
   IconDeviceFloppy,
-  IconArrowRight,
   IconCode,
 } from '@tabler/icons';
 import toast from 'react-hot-toast';
@@ -414,7 +413,13 @@ const GrpcQueryUrl = ({ item, collection, handleRun }) => {
                 handleRun(e);
               }}
             >
-              <IconArrowRight color={theme.requestTabPanel.url.icon} strokeWidth={1.5} size={22} />
+              <div
+                className="px-3 py-1 rounded hover:opacity-90 text-xs font-medium select-none"
+                title="Send Request"
+                style={{ backgroundColor: theme.colors.text.yellow, color: '#1f1f1f' }}
+              >
+                Send
+              </div>
             </div>
           )}
         </div>

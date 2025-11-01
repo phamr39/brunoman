@@ -1,11 +1,21 @@
+const fs = require('fs');
+const path = require('path');
+
 module.exports = function aboutBruno({version}) {
+  let logoDataUri = '';
+  try {
+    const p = path.join(__dirname, 'brunoman-logo.png');
+    const b = fs.readFileSync(p);
+    logoDataUri = 'data:image/png;base64,' + b.toString('base64');
+  } catch (e) {}
+
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
-        <title>About Bruno</title>
+        <title>About Brunoman</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -56,6 +66,7 @@ module.exports = function aboutBruno({version}) {
     </head>
     <body>
       <div class="logo">
+        ${logoDataUri ? `<img src="${logoDataUri}" width="100" />` : ''}
       </div>
         <svg id="emoji" width="100" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
           <g id="color">
@@ -166,7 +177,7 @@ module.exports = function aboutBruno({version}) {
             />
           </g>
         </svg>
-      <h2 class="title">Bruno ${version}</h2>
+      <h2 class="title">Brunoman ${version}</h2>
       <footer class="footer">
           ©2025 Bruno Software Inc
       </footer>
