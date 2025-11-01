@@ -1,4 +1,4 @@
-import { IconArrowRight, IconDeviceFloppy, IconPlugConnected, IconPlugConnectedX } from '@tabler/icons';
+import { IconDeviceFloppy, IconPlugConnected, IconPlugConnectedX } from '@tabler/icons';
 import { IconWebSocket } from 'components/Icons/Grpc';
 import classnames from 'classnames';
 import SingleLineEditor from 'components/SingleLineEditor/index';
@@ -158,7 +158,13 @@ const WsQueryUrl = ({ item, collection, handleRun }) => {
             )}
 
             <div data-testid="run-button" className="cursor-pointer" onClick={handleRunClick}>
-              <IconArrowRight color={theme.requestTabPanel.url.icon} strokeWidth={1.5} size={22} />
+              <div
+                className="px-3 py-1 rounded hover:opacity-90 text-xs font-medium select-none"
+                title="Send Request"
+                style={{ backgroundColor: theme.colors.text.yellow, color: '#1f1f1f' }}
+              >
+                Send
+              </div>
             </div>
           </div>
         </div>
