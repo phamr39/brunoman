@@ -10,6 +10,9 @@ The Brunoman distribution adds the following enhancements on top of upstream Bru
 - Clearer sidebar visuals
   - Collection rows use a collection icon, while folders use a folder icon for quick distinction.
 
+- Global search enhancements
+  - Search now matches not only request and folder names, but also request URLs.
+
 - Export improvements (Collections and Folders)
   - Collection: Export Bruno Collection, Postman Collection, Postman Collection + Environment(s), or Environment(s) only.
   - Folder: a dedicated Export dialog with the same options. Folder → Postman export includes parent collection environments.
