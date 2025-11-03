@@ -9,6 +9,13 @@ const template = [
     label: 'Collection',
     submenu: [
       {
+        label: 'New Collection',
+        accelerator: 'CommandOrControl+N',
+        click() {
+          ipcMain.emit('main:new-collection');
+        }
+      },
+      {
         label: 'Open Collection',
         click() {
           ipcMain.emit('main:open-collection');

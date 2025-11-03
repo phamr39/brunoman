@@ -29,6 +29,10 @@ export default defineConfig({
   html: {
     title: 'Brunoman'
   },
+  output: {
+    // Make asset URLs relative in production builds so Electron file:// works
+    assetPrefix: './'
+  },
   tools: {
     rspack: {
       module: {

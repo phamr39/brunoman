@@ -100,11 +100,13 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
     return 'http-request';
   };
 
+  const defaultRequestName = 'New Request';
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
-      requestName: '',
-      filename: '',
+      requestName: defaultRequestName,
+      filename: sanitizeName(defaultRequestName),
       requestType: getRequestType(collectionPresets),
       requestUrl: collectionPresets.requestUrl || '',
       requestMethod: 'GET',

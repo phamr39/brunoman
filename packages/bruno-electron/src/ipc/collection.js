@@ -89,12 +89,51 @@ const validatePathIsInsideCollection = (filePath, lastOpenedCollections) => {
   }
 }
 
+const resolveCreateLocation = (collectionLocation) => {
+  try {
+    if (collectionLocation && fs.existsSync(collectionLocation)) {
+      return collectionLocation;
+    }
+  } catch (_) {}
+
+  try {
+    const candidates = ['documents', 'desktop', 'userData']
+      .map((k) => {
+        try {
+          return app.getPath(k);
+        } catch (_) {
+          return null;
+        }
+      })
+      .filter(Boolean);
+    for (const p of candidates) {
+      try {
+        if (fs.existsSync(p)) {
+          return p;
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
+  } catch (_) {}
+
+  // Last resort: app userData path
+  try {
+    return app.getPath('userData');
+  } catch (_) {
+    return process.cwd();
+  }
+};
+
 const registerRendererEventHandlers = (mainWindow, watcher, lastOpenedCollections) => {
   // create collection
   ipcMain.handle(
     'renderer:create-collection',
     async (event, collectionName, collectionFolderName, collectionLocation) => {
       try {
+        // Ensure we have a valid base location to create the collection
+        collectionLocation = resolveCreateLocation(collectionLocation);
+
         collectionFolderName = sanitizeName(collectionFolderName);
         const dirPath = path.join(collectionLocation, collectionFolderName);
         if (fs.existsSync(dirPath)) {
@@ -130,7 +169,14 @@ const registerRendererEventHandlers = (mainWindow, watcher, lastOpenedCollection
         mainWindow.webContents.send('main:collection-opened', dirPath, uid, brunoConfig);
         ipcMain.emit('main:collection-opened', mainWindow, dirPath, uid, brunoConfig);
       } catch (error) {
-        return Promise.reject(error);
+        // Surface error to renderer without crashing the app
+        try {
+          mainWindow.webContents.send('main:display-error', {
+            message: error?.message || 'Failed to create collection'
+          });
+        } catch (_) {}
+        // Return a structured error instead of rejecting to avoid unhandled rejections in renderer
+        return { error: error?.message || String(error) };
       }
     }
   );
@@ -1367,6 +1413,69 @@ const registerMainEventHandlers = (mainWindow, watcher, lastOpenedCollections) =
   ipcMain.on('main:collection-opened', async (win, pathname, uid, brunoConfig) => {
     lastOpenedCollections.add(pathname);
     app.addRecentDocument(pathname);
+  });
+
+  // Create a new collection from menu
+  ipcMain.on('main:new-collection', async () => {
+    try {
+      const { browseDirectory } = require('../utils/filesystem');
+      // Choose a base directory from user
+      const baseDir = await browseDirectory(mainWindow);
+      if (!baseDir) return;
+
+      // Determine a unique folder name
+      const baseName = 'New Collection';
+      const uniqueName = generateUniqueName(baseName, (name) => {
+        try {
+          return fs.existsSync(path.join(baseDir, name));
+        } catch (_) {
+          return false;
+        }
+      });
+
+      const folderName = sanitizeName(uniqueName);
+      const collectionName = uniqueName;
+
+      // Reuse renderer create logic path
+      const dirPath = path.join(baseDir, folderName);
+      if (fs.existsSync(dirPath)) {
+        const files = fs.readdirSync(dirPath);
+        if (files.length > 0) {
+          throw new Error(`collection: ${dirPath} already exists and is not empty`);
+        }
+      }
+
+      if (!validateName(path.basename(dirPath))) {
+        throw new Error(`collection: invalid pathname - ${dirPath}`);
+      }
+
+      if (!fs.existsSync(dirPath)) {
+        await createDirectory(dirPath);
+      }
+
+      const uid = generateUidBasedOnHash(dirPath);
+      const brunoConfig = {
+        version: '1',
+        name: collectionName,
+        type: 'collection',
+        ignore: ['node_modules', '.git']
+      };
+      const content = await stringifyJson(brunoConfig);
+      await writeFile(path.join(dirPath, 'bruno.json'), content);
+
+      const { size, filesCount } = await getCollectionStats(dirPath);
+      brunoConfig.size = size;
+      brunoConfig.filesCount = filesCount;
+
+      mainWindow.webContents.send('main:collection-opened', dirPath, uid, brunoConfig);
+      ipcMain.emit('main:collection-opened', mainWindow, dirPath, uid, brunoConfig);
+    } catch (err) {
+      try {
+        mainWindow.webContents.send('main:display-error', {
+          message: err?.message || 'Failed to create collection'
+        });
+      } catch (_) {}
+    }
   });
 
   // The app listen for this event and allows the user to save unsaved requests before closing the app

@@ -4,7 +4,6 @@
 ### Brunoman – A modern open-source fork of Bruno, built to bridge the gap between Bruno’s local-first design and Postman’s full compatibility.
 
 ## What’s New in Brunoman
-
 The Brunoman distribution adds the following enhancements on top of upstream Bruno:
 
 - Clearer sidebar visuals
@@ -27,6 +26,16 @@ The Brunoman distribution adds the following enhancements on top of upstream Bru
 
 - Branding updates
   - Title set to “Brunoman” in the renderer and menus. About dialog and Welcome screen use the new logo. Dev icon updated; packaged installer icons can be customized via `.ico/.icns`.
+
+- Request naming flexibility
+  - Allow creating requests with duplicate names inside the same folder/collection.
+  - Request name is optional when creating; if left blank, a sensible default is auto-assigned.
+
+## Download Brunoman
+
+- Windows (MSI installer):  [![Download Windows MSI](https://img.shields.io/badge/Download-Latest-brightgreen)](http://cdn.beaverx.ai/brunoman/Brunoman_Windows_x64_MSI.msi)
+- Windows (Portable EXE):   [![Download Windows Portable](https://img.shields.io/badge/Download-Latest-brightgreen)](http://cdn.beaverx.ai/brunoman/Brunoman_Windows_x64_Portable.exe)
+- Windows (EXE installer):  [![Download Windows EXE](https://img.shields.io/badge/Download-Latest-brightgreen)](http://cdn.beaverx.ai/brunoman/Brunoman_Windows_x64.exe)
 
 ## What’s Bruno?
 
