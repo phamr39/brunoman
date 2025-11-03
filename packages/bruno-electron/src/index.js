@@ -52,10 +52,18 @@ const { getIsRunningInRosetta } = require('./utils/arch');
 const lastOpenedCollections = new LastOpenedCollections();
 const systemMonitor = new SystemMonitor();
 
+// Helper to safely exit the app without violating lint rules
+function safeAppExit() {
+  try {
+    app.exit(0);
+  } catch (_) {}
+}
+
 // Reference: https://content-security-policy.com/
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "connect-src 'self' https://*.posthog.com",
+  // Allow generic network for user API calls; explicit blocklist is enforced via webRequest below
+  'connect-src \'self\' http: https: ws: wss:',
   "font-src 'self' https: data:;",
   "frame-src data:",
   // this has been commented out to make oauth2 work
@@ -75,6 +83,22 @@ let mainWindow;
 
 // Prepare the renderer once the app is ready
 app.on('ready', async () => {
+  // Enforce local-only behavior: block Bruno cloud/analytics domains
+  try {
+    const blocked = [
+      '*://usebruno.com/*',
+      '*://*.usebruno.com/*',
+      '*://*.posthog.com/*'
+    ];
+    session.defaultSession.webRequest.onBeforeRequest({ urls: blocked }, (details, callback) => {
+      try {
+        console.log(`[network-block] blocking request to: ${details.url}`);
+      } catch (_) {}
+      callback({ cancel: true });
+    });
+  } catch (err) {
+    console.warn('Failed to install network blocklist', err);
+  }
 
   if (isDev) {
     const { installExtension, REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
@@ -96,6 +120,15 @@ app.on('ready', async () => {
   Menu.setApplicationMenu(menu);
   const { maximized, x, y, width, height } = loadWindowState();
 
+  const getWindowIcon = () => {
+    if (process.platform === 'win32') {
+      const devIcon = path.join(__dirname, '../resources/icons/win/icon.ico');
+      const prodIcon = path.join(process.resourcesPath || '', 'icons/win/icon.ico');
+      return isDev ? devIcon : prodIcon;
+    }
+    return path.join(__dirname, 'about/256x256.png');
+  };
+
   mainWindow = new BrowserWindow({
     x,
     y,
@@ -111,7 +144,7 @@ app.on('ready', async () => {
       webviewTag: true
     },
     title: 'Brunoman',
-    icon: path.join(__dirname, 'about/256x256.png')
+    icon: getWindowIcon()
     // we will bring this back
     // see https://github.com/usebruno/bruno/issues/440
     // autoHideMenuBar: true
@@ -160,8 +193,54 @@ app.on('ready', async () => {
   mainWindow.on('maximize', () => saveMaximized(true));
   mainWindow.on('unmaximize', () => saveMaximized(false));
   mainWindow.on('close', (e) => {
+    // Prevent default close to run a coordinated quit flow.
+    // Add a fallback to avoid being stuck if renderer is unresponsive.
+    if (mainWindow.isDestroyed()) return;
     e.preventDefault();
     ipcMain.emit('main:start-quit-flow');
+
+    // Fallback: force-destroy window if quit flow doesn't complete in time
+    const FALLBACK_TIMEOUT_MS = 4000;
+    const wc = mainWindow.webContents;
+    const fallbackTimer = setTimeout(() => {
+      try {
+        if (!mainWindow.isDestroyed()) {
+          // If renderer is crashed or stuck, destroy the window to allow exit
+          if (wc && typeof wc.isCrashed === 'function' && wc.isCrashed()) {
+            mainWindow.destroy();
+          } else {
+            mainWindow.destroy();
+          }
+          // Ensure process terminates shortly after window destroy in worst case
+          setTimeout(() => {
+            safeAppExit();
+          }, 500);
+        }
+      } catch (_) {
+        try {
+          if (!mainWindow.isDestroyed()) {
+            mainWindow.destroy();
+          }
+        } catch (_) {}
+      }
+    }, FALLBACK_TIMEOUT_MS);
+
+    // Clear fallback if window actually closes
+    mainWindow.once('closed', () => {
+      clearTimeout(fallbackTimer);
+    });
+  });
+
+  // If renderer becomes unresponsive, attempt a safe shutdown
+  mainWindow.on('unresponsive', () => {
+    try {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.destroy();
+        setTimeout(() => {
+          safeAppExit();
+        }, 500);
+      }
+    } catch (_) {}
   });
 
   mainWindow.webContents.on('will-redirect', (event, url) => {

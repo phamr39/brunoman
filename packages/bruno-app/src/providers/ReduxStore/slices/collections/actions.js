@@ -689,7 +689,32 @@ export const cloneItem = (newName, newFilename, itemUid, collectionUid) => (disp
           })
         );
       } else {
-        return reject(new Error('Duplicate request names are not allowed under the same folder'));
+        // Allow duplicate by appending last 4 digits of timestamp
+        const __suffix = String(Date.now()).slice(-4);
+        const __uniqueName = `${trim(newName)} ${__suffix}`;
+        const __uniqueFilenameBase = sanitizeName(__uniqueName);
+        const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+
+        set(itemToSave, 'name', __uniqueName);
+        set(itemToSave, 'filename', trim(__uniqueResolvedFilename));
+
+        const fullPathname = path.join(collection.pathname, __uniqueResolvedFilename);
+        const { ipcRenderer } = window;
+        const requestItems = filter(collection.items, (i) => i.type !== 'folder');
+        itemToSave.seq = requestItems ? requestItems.length + 1 : 1;
+
+        itemSchema
+          .validate(itemToSave)
+          .then(() => ipcRenderer.invoke('renderer:new-request', fullPathname, itemToSave))
+          .then(resolve)
+          .catch(reject);
+
+        dispatch(insertTaskIntoQueue({
+          uid: uuid(),
+          type: 'OPEN_REQUEST',
+          collectionUid,
+          itemPathname: fullPathname
+        }));
       }
     } else {
       const reqWithSameNameExists = find(
@@ -718,7 +743,33 @@ export const cloneItem = (newName, newFilename, itemUid, collectionUid) => (disp
           })
         );
       } else {
-        return reject(new Error('Duplicate request names are not allowed under the same folder'));
+        // Allow duplicate by appending last 4 digits of timestamp
+        const __suffix = String(Date.now()).slice(-4);
+        const __uniqueName = `${trim(newName)} ${__suffix}`;
+        const __uniqueFilenameBase = sanitizeName(__uniqueName);
+        const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+
+        set(itemToSave, 'name', __uniqueName);
+        set(itemToSave, 'filename', trim(__uniqueResolvedFilename));
+
+        const dirname = path.dirname(item.pathname);
+        const fullName = path.join(dirname, __uniqueResolvedFilename);
+        const { ipcRenderer } = window;
+        const requestItems = filter(parentItem.items, (i) => i.type !== 'folder');
+        itemToSave.seq = requestItems ? requestItems.length + 1 : 1;
+
+        itemSchema
+          .validate(itemToSave)
+          .then(() => ipcRenderer.invoke('renderer:new-request', fullName, itemToSave))
+          .then(resolve)
+          .catch(reject);
+
+        dispatch(insertTaskIntoQueue({
+          uid: uuid(),
+          type: 'OPEN_REQUEST',
+          collectionUid,
+          itemPathname: fullName
+        }));
       }
     }
   });
@@ -1051,16 +1102,15 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
       const items = filter(collection.items, (i) => isItemAFolder(i) || isItemARequest(i));
       item.seq = items.length + 1;
 
-      if (!reqWithSameNameExists) {
-        const fullName = path.join(collection.pathname, resolvedFilename);
+      const _proceedCreate = (nameForUse, resolvedFilenameForUse) => {
+        const fullName = path.join(collection.pathname, resolvedFilenameForUse);
         const { ipcRenderer } = window;
-
+        item.name = nameForUse;
+        item.filename = resolvedFilenameForUse;
         ipcRenderer
           .invoke('renderer:new-request', fullName, item)
           .then(() => {
-            // task middleware will track this and open the new request in a new tab once request is created
-            dispatch(
-              insertTaskIntoQueue({
+            dispatch(insertTaskIntoQueue({
                 uid: uuid(),
                 type: 'OPEN_REQUEST',
                 collectionUid,
@@ -1070,29 +1120,36 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
             resolve();
           })
           .catch(reject);
+      };
+
+      if (!reqWithSameNameExists) {
+        _proceedCreate(requestName, resolvedFilename);
       } else {
-        return reject(new Error('Duplicate request names are not allowed under the same folder'));
+        const __suffix = String(Date.now()).slice(-4);
+        const __uniqueName = `${requestName} ${__suffix}`;
+        const __uniqueFilenameBase = sanitizeName(`${filename || requestName} ${__suffix}`);
+        const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+        _proceedCreate(__uniqueName, __uniqueResolvedFilename);
       }
     } else {
       const currentItem = findItemInCollection(collection, itemUid);
       if (currentItem) {
-        const reqWithSameNameExists = find(
-          currentItem.items,
+        const reqWithSameNameExists = find(currentItem.items,
           (i) => i.type !== 'folder' && trim(i.filename) === trim(resolvedFilename)
         );
         const items = filter(currentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
         item.seq = items.length + 1;
-        if (!reqWithSameNameExists) {
-          const fullName = path.join(currentItem.pathname, resolvedFilename);
+        const _proceedCreate = (nameForUse, resolvedFilenameForUse) => {
+          const fullName = path.join(currentItem.pathname, resolvedFilenameForUse);
           const { ipcRenderer } = window;
+          item.name = nameForUse;
+          item.filename = resolvedFilenameForUse;
           ipcRenderer
             .invoke('renderer:new-request', fullName, item)
             .then(() => {
-              // task middleware will track this and open the new request in a new tab once request is created
-              dispatch(
-                insertTaskIntoQueue({
-                  uid: uuid(),
-                  type: 'OPEN_REQUEST',
+              dispatch(insertTaskIntoQueue({
+                uid: uuid(),
+                type: 'OPEN_REQUEST',
                   collectionUid,
                   itemPathname: fullName
                 })
@@ -1100,8 +1157,16 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
               resolve();
             })
             .catch(reject);
+        };
+
+        if (!reqWithSameNameExists) {
+          _proceedCreate(requestName, resolvedFilename);
         } else {
-          return reject(new Error('Duplicate request names are not allowed under the same folder'));
+          const __suffix = String(Date.now()).slice(-4);
+          const __uniqueName = `${requestName} ${__suffix}`;
+          const __uniqueFilenameBase = sanitizeName(`${filename || requestName} ${__suffix}`);
+          const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+          _proceedCreate(__uniqueName, __uniqueResolvedFilename);
         }
       }
     }
@@ -1154,27 +1219,36 @@ export const newGrpcRequest = (params) => (dispatch, getState) => {
     const reqWithSameNameExists = find(parentItem.items,
       (i) => i.type !== 'folder' && trim(i.filename) === trim(resolvedFilename));
 
-    if (reqWithSameNameExists) {
-      return reject(new Error('Duplicate request names are not allowed under the same folder'));
-    }
+    const _proceedCreate = (nameForUse, resolvedFilenameForUse) => {
+      const items = filter(parentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
+      item.seq = items.length + 1;
+      const fullName = path.join(parentItem.pathname, resolvedFilenameForUse);
+      const { ipcRenderer } = window;
+      item.name = nameForUse;
+      item.filename = resolvedFilenameForUse;
+      ipcRenderer
+        .invoke('renderer:new-request', fullName, item)
+        .then(() => {
+          dispatch(insertTaskIntoQueue({
+            uid: uuid(),
+            type: 'OPEN_REQUEST',
+            collectionUid,
+            itemPathname: fullName
+          }));
+          resolve();
+        })
+        .catch(reject);
+    };
 
-    const items = filter(parentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
-    item.seq = items.length + 1;
-    const fullName = path.join(parentItem.pathname, resolvedFilename);
-    const { ipcRenderer } = window;
-    ipcRenderer
-      .invoke('renderer:new-request', fullName, item)
-      .then(() => {
-        // task middleware will track this and open the new request in a new tab once request is created
-        dispatch(insertTaskIntoQueue({
-          uid: uuid(),
-          type: 'OPEN_REQUEST',
-          collectionUid,
-          itemPathname: fullName
-        }));
-        resolve();
-      })
-      .catch(reject);
+    if (!reqWithSameNameExists) {
+      _proceedCreate(requestName, resolvedFilename);
+    } else {
+      const __suffix = String(Date.now()).slice(-4);
+      const __uniqueName = `${requestName} ${__suffix}`;
+      const __uniqueFilenameBase = sanitizeName(`${filename || requestName} ${__suffix}`);
+      const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+      _proceedCreate(__uniqueName, __uniqueResolvedFilename);
+    }
   });
 };
 
@@ -1224,27 +1298,36 @@ export const newWsRequest = (params) => (dispatch, getState) => {
     const reqWithSameNameExists = find(parentItem.items,
       (i) => i.type !== 'folder' && trim(i.filename) === trim(resolvedFilename));
 
-    if (reqWithSameNameExists) {
-      return reject(new Error('Duplicate request names are not allowed under the same folder'));
-    }
+    const _proceedCreate = (nameForUse, resolvedFilenameForUse) => {
+      const items = filter(parentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
+      item.seq = items.length + 1;
+      const fullName = path.join(parentItem.pathname, resolvedFilenameForUse);
+      const { ipcRenderer } = window;
+      item.name = nameForUse;
+      item.filename = resolvedFilenameForUse;
+      ipcRenderer
+        .invoke('renderer:new-request', fullName, item)
+        .then(() => {
+          dispatch(insertTaskIntoQueue({
+            uid: uuid(),
+            type: 'OPEN_REQUEST',
+            collectionUid,
+            itemPathname: fullName
+          }));
+          resolve();
+        })
+        .catch(reject);
+    };
 
-    const items = filter(parentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
-    item.seq = items.length + 1;
-    const fullName = path.join(parentItem.pathname, resolvedFilename);
-    const { ipcRenderer } = window;
-    ipcRenderer
-      .invoke('renderer:new-request', fullName, item)
-      .then(() => {
-        // task middleware will track this and open the new request in a new tab once request is created
-        dispatch(insertTaskIntoQueue({
-          uid: uuid(),
-          type: 'OPEN_REQUEST',
-          collectionUid,
-          itemPathname: fullName
-        }));
-        resolve();
-      })
-      .catch(reject);
+    if (!reqWithSameNameExists) {
+      _proceedCreate(requestName, resolvedFilename);
+    } else {
+      const __suffix = String(Date.now()).slice(-4);
+      const __uniqueName = `${requestName} ${__suffix}`;
+      const __uniqueFilenameBase = sanitizeName(`${filename || requestName} ${__suffix}`);
+      const __uniqueResolvedFilename = resolveRequestFilename(__uniqueFilenameBase);
+      _proceedCreate(__uniqueName, __uniqueResolvedFilename);
+    }
   });
 };
 

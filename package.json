@@ -75,7 +75,12 @@
     "test:prettier:web": "npm run test:prettier --workspace=packages/bruno-app",
     "lint": "node ./node_modules/eslint/bin/eslint.js",
     "lint:fix": "node ./node_modules/eslint/bin/eslint.js --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:win:prep": "node ./scripts/prep-electron.js",
+    "build:win:nsis": "npm run build:web && node ./scripts/prep-electron.js && cd packages/bruno-electron && npx electron-builder --win nsis --publish never --config electron-builder-config.js && cd ../.. && node ./scripts/copy-artifacts.js nsis",
+    "build:win:msi": "npm run build:web && node ./scripts/prep-electron.js && cd packages/bruno-electron && npx electron-builder --win msi --publish never --config electron-builder-config.js && cd ../.. && node ./scripts/copy-artifacts.js msi",
+    "build:win:portable": "npm run build:web && node ./scripts/prep-electron.js && cd packages/bruno-electron && npx electron-builder --win portable --publish never --config electron-builder-config.js && cd ../.. && node ./scripts/copy-artifacts.js portable",
+    "build:win:all": "npm run build:win:nsis && npm run build:win:msi && npm run build:win:portable"
   },
   "nano-staged": {
     "*.{js,ts,jsx}": [
